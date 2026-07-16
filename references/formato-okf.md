@@ -50,6 +50,8 @@ notebook_id: <id conhecido>
 
 Use `source_id` e `source_status` nos conceitos de fonte. Nao invente `resource`, identificadores ou datas ausentes.
 
+Coloque entre aspas valores YAML que tenham :, #, {}, [] ou outros caracteres estruturais. O frontmatter deve passar por yaml.safe_load, nao apenas por verificacao textual.
+
 ## Citacoes e visual
 
 Conceitos baseados em fontes externas terminam com `# Citations`. A sintese cita conceitos em `/sources/`; cada fonte cita sua URL externa quando conhecida.

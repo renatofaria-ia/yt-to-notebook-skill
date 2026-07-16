@@ -73,6 +73,11 @@ class ValidatorTests(unittest.TestCase):
             note = self.write(folder, "conceito.md", self.concept(body="# Nota\n\nLeia [fonte](/sources/fonte.md).\n\n# Citations\n\n[1] [Fonte](/sources/fonte.md)\n"))
             self.assertEqual(run(note).returncode, 0)
 
+    def test_quoted_yaml_title_with_colon_is_valid(self):
+        with tempfile.TemporaryDirectory() as folder:
+            content = self.concept().replace("title: Conceito", 'title: "Conceito: com dois-pontos"')
+            note = self.write(folder, "conceito.md", content)
+            self.assertEqual(run(note).returncode, 0)
     def test_relative_link_is_accepted(self):
         with tempfile.TemporaryDirectory() as folder:
             note = self.write(folder, "conceito.md", self.concept(body="# Nota\n\nLeia [fonte](./fonte.md).\n\n# Citations\n\n[1] [Fonte](./fonte.md)\n"))

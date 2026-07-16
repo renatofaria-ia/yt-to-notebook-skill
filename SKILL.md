@@ -61,6 +61,7 @@ source_status: ready
 ```
 
 - Em `sintese.md`, use `type: NotebookLM Summary`, links `/sources/<arquivo>.md` e `# Citations` apontando para os conceitos de fonte.
+- Coloque entre aspas valores YAML que contenham :, #, {}, [] ou outros caracteres estruturais; valide sempre o bundle com PyYAML antes da entrega.
 - Em cada fonte, use `type: NotebookLM Source`, `source_id`, `source_status` e `resource` somente quando a URL for conhecida. Termine com `# Citations`; nao invente URL, ID ou data.
 - Use links Markdown padrao. Prefira links absolutos relativos a raiz do bundle, como `/sources/video.md`; links relativos tambem sao validos. Nunca use `file://`, caminhos de disco ou wikilinks na geracao.
 - `index.md` raiz deve ter somente `okf_version: "0.1"` no frontmatter e listar itens com descricao. `sources/index.md` nao tem frontmatter. `log.md` nao tem frontmatter e registra a criacao em data ISO, mais recente primeiro.
