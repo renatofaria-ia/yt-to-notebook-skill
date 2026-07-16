@@ -81,9 +81,14 @@ def main() -> int:
     entities = ("&quot;", "&amp;", "&lt;", "&gt;", "&#")
     if any(entity in block for block in mermaid_blocks for entity in entities):
         erros.append("HTML entity inside Mermaid: use literal text")
-    if any(re.match(r"\s*mindmap\s*$", block) and re.search(r'^\s*".*"\s*$', block, re.MULTILINE) for block in mermaid_blocks):
+    quoted_mindmap_label = any(
+        block.lstrip().startswith("mindmap")
+        and any(line.strip().startswith('"') and line.strip().endswith('"') for line in block.splitlines())
+        for block in mermaid_blocks
+    )
+    if quoted_mindmap_label:
         erros.append("quoted mindmap label: use a simple unquoted label")
-    if mermaid_blocks:
+    elif mermaid_blocks:
         infos.append("Mermaid blocks have no HTML entities or quoted mindmap labels")
 
     # Mermaid — recomendado
