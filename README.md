@@ -1,55 +1,67 @@
 # notebooklm-to-notes
 
-Skill para transformar notebooks do NotebookLM em **bundles Open Knowledge Format (OKF) 0.1** visuais, rastreaveis e prontos para leitura humana ou por agentes.
+Skill para transformar notebooks do NotebookLM em conhecimento **OKF 0.1** visual, rastreável e pronto para Obsidian, Markdown ou Notion. A versão atual é **v1.1.0**: além do bundle independente, ela suporta um deck hierárquico de segundo cérebro.
 
-Cada entrega cria uma síntese e um conceito por fonte, com citações, `index.md`, `log.md`, Mermaid, callouts, tabelas e Markdown em UTF-8 sem BOM. O bundle local e a fonte de verdade; Obsidian e Notion são destinos de leitura ou espelho.
+## O que entrega
 
-## Contrato de saida
+- Síntese em PT-BR com TL;DR, callouts, tabelas, Mermaid e mapa mental quando útil.
+- Frontmatter YAML OKF, `index.md`, `log.md`, citações e proveniência do NotebookLM.
+- Resumos por fonte somente após confirmação do usuário, reduzindo trabalho e ruído.
+- Cross-links didáticos entre notebooks, sem banco de grafo, wikilinks ou taxonomia paralela.
+- Validação de UTF-8, YAML, Mermaid, pt-BR e estrutura do deck.
+
+## Estruturas de saída
 
 ```text
 <bundle>/
-  index.md                 # navegacao progressiva + okf_version: "0.1"
-  log.md                   # historico datado
-  sintese.md               # NotebookLM Summary visual
+  index.md
+  log.md
+  sintese.md
   sources/
     index.md
-    <fonte>.md             # NotebookLM Source por fonte
+    <fonte>.md
 ```
-
-Conceitos usam frontmatter YAML com `type` obrigatorio e os campos recomendados `title`, `description`, `resource` quando conhecido, `tags` e `timestamp`. citações ficam em `# Citations`. Links internos usam Markdown padrão e preferem caminhos absolutos relativos a raiz, como `/sources/video.md`.
-
-## Uso
 
 ```text
-Use $notebooklm-to-notes para transformar o notebook "Curso X" em um bundle OKF em C:\Notas.
-Use $notebooklm-to-notes para extrair o notebook "Curso X" para C:\Notas\curso-x.md.
+<deck>/
+  index.md
+  log.md
+  notebooks/
+    index.md
+    <notebook-slug>/
+      index.md
+      <notebook-slug>.md
+      sources/                 # criado após confirmação do usuário
+        index.md
+        <fonte>.md
 ```
 
-No segundo caso, a skill cria `C:\Notas\curso-x\` como bundle irmao; não produz arquivo solto fora do OKF.
+Exemplo:
 
-## validação
+```text
+Use $notebooklm-to-notes para resumir o notebook "Curso X" no meu deck de segundo cérebro em C:/Notas.
+```
+
+A skill cria primeiro a síntese do notebook e então pergunta se deve gerar resumos de fontes. Bundles antigos permanecem intactos; não há migração automática.
+
+## Validação
 
 ```powershell
 python -m pip install -r requirements.txt
 python .\scripts\validar_nota.py .\caminho\para\conceito.md
 python .\scripts\validar_nota.py --bundle .\caminho\para\bundle --pt-br
+python .\scripts\validar_nota.py --deck .\caminho\para\deck --pt-br
 ```
 
-O modo padrão valida OKF. Em entregas da skill, `--pt-br` é obrigatório: ele bloqueia formas pt-BR comuns sem acentuação no texto humano, sem inspecionar URLs, tags, caminhos ou blocos de código. `--profile portable` existe somente para artefatos legados.
+`--deck` exige a raiz, índices progressivos, conceito principal de cada notebook, proveniência mínima de fontes e links internos gerados válidos. `--bundle` continua permissivo conforme o OKF.
 
-## Destinos
+## Referências
 
-- **Obsidian:** abre diretamente o bundle; Mermaid e callouts renderizam onde houver suporte.
-- **Markdown:** o bundle e a entrega canonica e portatil.
-- **Notion:** o bundle local e criado primeiro; com conector, a skill publica um espelho em blocos nativos.
-
-## referências
-
-- [Especificacao OKF 0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
+- [Especificação OKF 0.1](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md)
 - `references/formato-okf.md`
-- `references/formato-visual.md`
-- `references/exemplo-bundle-okf.md`
+- `references/deck-progressivo.md`
+- `references/exemplo-deck-okf.md`
 
-## Licenca
+## Licença
 
 [MIT](LICENSE).

@@ -57,3 +57,25 @@ Coloque entre aspas valores YAML que tenham :, #, {}, [] ou outros caracteres es
 Conceitos baseados em fontes externas terminam com `# Citations`. A síntese cita conceitos em `/sources/`; cada fonte cita sua URL externa quando conhecida.
 
 Mermaid, callouts, emojis e tabelas são extensoes visuais permitidas. Eles não substituem texto, titulos e listas estruturadas.
+
+## Perfil de deck progressivo
+
+Para um segundo cérebro, a skill pode usar um único bundle-raiz com vários notebooks:
+
+```text
+<deck>/
+  index.md
+  log.md
+  notebooks/
+    index.md
+    <notebook-slug>/
+      index.md
+      <notebook-slug>.md
+      sources/                 # opcional
+        index.md
+        <fonte>.md
+```
+
+A raiz e cada diretório de notebook oferecem divulgação progressiva por `index.md`. O conceito principal usa `type: NotebookLM Summary` e `notebook_id`; conceitos de fonte usam `type: NotebookLM Source`, `source_id` e `source_status`. O diretório `sources/`  é criado somente depois da confirmação do usuário.
+
+`python scripts/validar_nota.py --deck <deck> --pt-br` valida esse perfil da skill, incluindo links internos que ela própria produz. `--bundle` segue a conformidade permissiva do OKF e aceita links quebrados, como determina a especificação.

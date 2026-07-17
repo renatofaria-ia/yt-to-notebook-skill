@@ -1,86 +1,83 @@
 ---
 name: notebooklm-to-notes
-description: Extraia conhecimento de notebooks do NotebookLM e entregue bundles Open Knowledge Format (OKF) 0.1 visuais, com síntese, conceitos por fonte, citações, indice, log, Mermaid e callouts. Use quando o usuário quiser transformar, exportar ou persistir um notebook do NotebookLM no Obsidian, em Markdown ou no Notion.
+description: Extraia conhecimento de notebooks do NotebookLM e entregue bundles Open Knowledge Format (OKF) 0.1 visuais. Use para transformar, exportar ou persistir notebooks no Obsidian, Markdown ou Notion, inclusive ao montar um deck progressivo de segundo cérebro com resumos de notebook, resumos opcionais de fontes e cross-links didáticos.
 ---
 
 # notebooklm-to-notes
 
-Gere sempre um **bundle OKF 0.1** como fonte de verdade. Preserve a experiência editorial: PT-BR claro, TL;DR, contexto, diagramas Mermaid, callouts, tabelas, emojis, mapa mental e cola rápida.
+Gere conhecimento em PT-BR claro, visual e rastreável. O **bundle OKF 0.1 local**  é sempre a fonte de verdade; TL;DR, callouts, tabelas, Mermaid, emojis, mapa mental e cola rápida são a camada editorial.
 
-## referências obrigatorias
+## Referências obrigatórias
 
-Antes de escrever, leia:
+Leia `references/formato-okf.md`, `references/formato-visual.md`, `references/deck-progressivo.md` e `references/exemplo-deck-okf.md` antes de escrever.
 
-- `references/formato-okf.md` para contrato, estrutura e citações OKF.
-- `references/formato-visual.md` para a camada editorial e Mermaid.
-- `references/exemplo-bundle-okf.md` para o bundle completo esperado.
+## Fluxo de extração
 
-## 1. Extrair com fidelidade
+1. Confirme a sessão: `notebooklm auth check --test --json`.
+2. Liste notebooks e fontes; use o ID completo. Registre título, ID, URL conhecida e status de cada fonte.
+3. Peça ao NotebookLM um **pacote estruturado de conteúdo**, seguindo `references/deck-progressivo.md`. Não peça YAML, caminhos, Mermaid nem OKF pronto: a skill aplica persistência e apresentação.
+4. Crie a síntese visual, os índices, o log, o YAML e as citações. Preserve limites e fontes com erro; não invente conteúdo, URLs ou identificadores.
+5. Depois da síntese, pergunte se o usuário quer resumos das fontes. Só então consulte cada fonte pronta, crie `sources/` e atualize índices, síntese e log.
 
-1. Confirme a sessão com `notebooklm auth check --test --json`.
-2. Liste notebooks e fontes; use o ID completo do notebook.
-3. Leia `source fulltext` de cada fonte pronta. Registre fontes com erro sem inventar conteúdo.
-4. Inventarie conceitos, exemplos, números, limites e divergências antes de redigir.
+## Escolher o destino
 
-## 2. Definir o bundle
-
-- Se o usuário indicar uma pasta, crie nela um diretório com slug do notebook.
-- Se indicar um arquivo `.md`, crie uma pasta irmã com o mesmo nome sem extensão; não entregue Markdown solto fora do bundle.
-- não imponha pasta de vault, tags proprietarias, hubs ou wikilinks.
-
-Crie esta estrutura minima:
+- **Bundle independente (padrão):** se o usuário indicar uma pasta ou arquivo `.md`, crie um bundle irmão com `index.md`, `log.md`, `sintese.md` e `sources/`.
+- **Deck progressivo:** quando o usuário mencionar *deck*, *segundo cérebro* ou indicar uma raiz de conhecimento, crie ou reutilize a raiz abaixo. Não mova bundles históricos sem pedido explícito.
 
 ```text
-<bundle>/
+<deck>/
   index.md
   log.md
-  sintese.md
-  sources/
+  notebooks/
     index.md
-    <fonte>.md
+    <notebook-slug>/
+      index.md
+      <notebook-slug>.md
+      sources/                 # somente após confirmação do usuário
+        index.md
+        <fonte-slug>.md
 ```
 
-## 3. Escrever conceitos OKF
+`<notebook-slug>.md`  é o conceito principal. Não use um arquivo como diretório.
 
-Todo `.md` que não seja `index.md` ou `log.md` precisa de YAML UTF-8 sem BOM com:
+## Conceitos, links e proveniência
 
-
-
-Use as chaves reais abaixo, em minúsculas:
+Todo `.md` exceto `index.md` e `log.md` tem YAML UTF-8 sem BOM e `type` não vazio.
 
 ```yaml
 ---
 type: NotebookLM Summary
-title: <titulo humano>
-description: <resumo em uma frase>
+title: <título humano>
+description: <uma frase>
 tags: [notebooklm, <tema>]
 timestamp: <ISO 8601>
 notebook_id: <id conhecido>
-source_status: ready
+origin: notebooklm
+source_ready_count: <número>
+source_error_count: <número>
 ---
 ```
 
-- Em `sintese.md`, use `type: NotebookLM Summary`, links `/sources/<arquivo>.md` e `# Citations` apontando para os conceitos de fonte.
-- Escreva todo texto humano em pt-BR natural, com acentuação correta. UTF-8 sem BOM não substitui a revisão linguística: use `síntese`, `automação`, `memória`, `não` e demais formas acentuadas. Identificadores, tags, URLs, caminhos e blocos de código podem permanecer em ASCII.
-- Coloque entre aspas valores YAML que contenham :, #, {}, [] ou outros caracteres estruturais; valide sempre o bundle com PyYAML antes da entrega.
-- Em cada fonte, use `type: NotebookLM Source`, `source_id`, `source_status` e `resource` somente quando a URL for conhecida. Termine com `# Citations`; não invente URL, ID ou data.
-- Use links Markdown padrão. Prefira links absolutos relativos a raiz do bundle, como `/sources/video.md`; links relativos também são válidos. Nunca use `file://`, caminhos de disco ou wikilinks na geração.
-- `index.md` raiz deve ter somente `okf_version: "0.1"` no frontmatter e listar itens com descrição. `sources/index.md` não tem frontmatter. `log.md` não tem frontmatter e registra a criação em data ISO, mais recente primeiro.
+- Fontes usam `type: NotebookLM Source`, `source_id`, `source_status` e `resource` somente quando a URL  é conhecida.
+- Sínteses e fontes terminam em `# Citations`. A síntese cita conceitos em `/notebooks/<slug>/sources/` quando existirem.
+- Coloque entre aspas valores YAML com `:`, `#`, `{}` ou `[]`.
+- Use links Markdown absolutos relativos  à raiz. Nunca use `file://`, caminhos de disco ou wikilinks.
 
-## 4. Camada visual
+## Cross-links didáticos
 
-A síntese mantém esta sequência quando aplicavel: H1, TL;DR, proveniência, mecanismo, desenvolvimento, aplicação, mapa, cola rápida e citações.
+Crie no máximo três links em `## Conhecimento relacionado` de cada síntese. Um link só é válido se o NotebookLM explicitou a relação ou se os dois conceitos compartilham ao menos duas tags normalizadas. Escreva a explicação junto do link. Fontes ligam somente ao conceito principal. Não crie banco de grafo, arquivos de arestas ou hubs de tags.
 
-Mermaid e callouts são extensoes visuais: o conteúdo essencial deve permanecer claro em Markdown puro. Nunca use entidades HTML dentro de Mermaid. Em `mindmap`, use rótulos simples sem aspas.
+## Camada visual e validação
 
-## 5. Entregar
+A síntese segue, quando aplicável: H1, TL;DR, proveniência, ideia central, desenvolvimento, aplicação, mapa, cola rápida e citações. O conteúdo essencial deve permanecer legível em Markdown puro.
 
-1. Instale dependências: `python -m pip install -r requirements.txt`.
-2. Valide o bundle: `python scripts/validar_nota.py --bundle <bundle> --pt-br`. Esta validação é obrigatória e bloqueia formas pt-BR comuns sem acentuação na escrita humana.
-3. Corrija todos os erros antes da entrega; avisos OKF são orientações de qualidade e não bloqueiam o bundle.
-4. Para Notion, crie primeiro o bundle local. Se houver conector, publique um espelho em blocos nativos e informe o caminho da fonte de verdade. Sem conector, entregue o bundle local.
-5. Reporte caminho, fontes prontas e com erro, conceitos criados, validação e extensoes visuais usadas.
+- Nunca use entidades HTML em Mermaid; em `mindmap`, use rótulos simples, sem aspas.
+- Escreva em PT-BR natural e acentuado; identificadores, URLs, tags e código podem permanecer em ASCII.
+- Valide bundle: `python scripts/validar_nota.py --bundle <bundle> --pt-br`.
+- Valide deck: `python scripts/validar_nota.py --deck <deck> --pt-br`.
+
+Para Notion, gere primeiro o bundle local e publique apenas um espelho visual se houver conector.
 
 ## Compatibilidade
 
-`python scripts/validar_nota.py --profile portable <arquivo>` continua disponível apenas para validar artefatos antigos. não o use para novas entregas.
+`python scripts/validar_nota.py --profile portable <arquivo>` permanece apenas para artefatos legados.

@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 VALIDATOR = ROOT / "scripts" / "validar_nota.py"
 FIXTURE_BUNDLE = ROOT / "tests" / "fixtures" / "bundle-valido"
+DECK_FIXTURE = ROOT / "tests" / "fixtures" / "deck-valido"
 LEGACY = ROOT / "tests" / "nota-valida.md"
 MINDMAP = ROOT / "tests" / "nota-mindmap-com-aspas.md"
 
@@ -156,6 +157,48 @@ class ValidatorTests(unittest.TestCase):
             )
             note = self.write(folder, "conceito.md", self.concept("tags: [automacao]\n", body))
             self.assertEqual(run(note, "--pt-br").returncode, 0)
+
+
+    def test_valid_progressive_deck_is_conformant(self):
+        result = run("--deck", DECK_FIXTURE, "--pt-br")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_deck_requires_notebook_provenance(self):
+        with tempfile.TemporaryDirectory() as folder:
+            deck = Path(folder) / "deck"
+            shutil.copytree(DECK_FIXTURE, deck)
+            summary = deck / "notebooks" / "curso-teste" / "curso-teste.md"
+            summary.write_text(summary.read_text(encoding="utf-8").replace("notebook_id: notebook-de-teste\n", ""), encoding="utf-8")
+            result = run("--deck", deck)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("exige notebook_id", result.stdout)
+
+    def test_deck_rejects_broken_generated_link(self):
+        with tempfile.TemporaryDirectory() as folder:
+            deck = Path(folder) / "deck"
+            shutil.copytree(DECK_FIXTURE, deck)
+            index = deck / "notebooks" / "curso-teste" / "index.md"
+            index.write_text(index.read_text(encoding="utf-8").replace("curso-teste.md", "ausente.md"), encoding="utf-8")
+            result = run("--deck", deck)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("link interno gerado não encontrado", result.stdout)
+
+
+    def test_deck_allows_summary_without_source_concepts(self):
+        with tempfile.TemporaryDirectory() as folder:
+            deck = Path(folder) / "deck"
+            shutil.copytree(DECK_FIXTURE, deck)
+            shutil.rmtree(deck / "notebooks" / "curso-teste" / "sources")
+            index = deck / "notebooks" / "curso-teste" / "index.md"
+            index.write_text("# Curso de teste\n\n* [Sintese](/notebooks/curso-teste/curso-teste.md) - Visao geral.\n", encoding="utf-8")
+            summary = deck / "notebooks" / "curso-teste" / "curso-teste.md"
+            summary.write_text(
+                (summary.read_text(encoding="utf-8")
+                .replace("Leia a [fonte de teste](/notebooks/curso-teste/sources/fonte-teste.md).", "Fonte identificada: source-de-teste.")
+                .replace("[1] [Fonte de teste](/notebooks/curso-teste/sources/fonte-teste.md)", "[1] Fonte identificada: source-de-teste")),
+                encoding="utf-8",
+            )
+            self.assertEqual(run("--deck", deck).returncode, 0)
 
 
 if __name__ == "__main__":

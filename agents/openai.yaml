@@ -1,4 +1,4 @@
 interface:
-  display_name: "NotebookLM para bundles OKF"
-  short_description: "Transforme notebooks em bundles OKF visuais"
-  default_prompt: "Use $notebooklm-to-notes para extrair um notebook em um bundle OKF visual no destino que eu indicar."
+  display_name: "NotebookLM para decks OKF"
+  short_description: "Transforme notebooks em conhecimento progressivo OKF"
+  default_prompt: "Use $notebooklm-to-notes para extrair um notebook em um deck OKF visual de segundo cérebro no destino que eu indicar."

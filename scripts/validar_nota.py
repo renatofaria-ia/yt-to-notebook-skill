@@ -278,6 +278,99 @@ def validate_bundle(bundle_root: Path, enforce_ptbr: bool = False) -> Report:
     return report
 
 
+def validate_deck_link_targets(path: Path, deck_root: Path, report: Report) -> None:
+    """Garante que os links internos produzidos pelo modo deck existem.
+
+    O OKF aceita links quebrados. Esta checagem mais rigorosa só vale para a
+    estrutura que a própria skill cria, evitando índices ou cross-links
+    desatualizados sem restringir a compatibilidade do validador OKF genérico.
+    """
+    text, read_report = read_utf8(path)
+    report.extend(read_report, f"{path.relative_to(deck_root)}: ")
+    if text is None:
+        return
+    _, body, frontmatter_error = split_frontmatter(text)
+    if frontmatter_error:
+        return
+    for raw_target in MARKDOWN_LINK.findall(body):
+        target = raw_target.strip().split("#", 1)[0].strip()
+        if not target or "://" in target or target.startswith(("mailto:", "#")):
+            continue
+        destination = deck_root / target.lstrip("/") if target.startswith("/") else path.parent / target
+        if not destination.exists():
+            report.errors.append(
+                f"{path.relative_to(deck_root)}: link interno gerado não encontrado: {raw_target}"
+            )
+
+
+def validate_deck(deck_root: Path, enforce_ptbr: bool = False) -> Report:
+    """Valida o perfil opinativo de deck progressivo da notebooklm-to-notes."""
+    report = validate_bundle(deck_root, enforce_ptbr)
+    if not deck_root.is_dir():
+        return report
+    for required in ("index.md", "log.md", "notebooks/index.md"):
+        if not (deck_root / required).is_file():
+            report.errors.append(f"deck exige {required}")
+    notebooks_dir = deck_root / "notebooks"
+    if not notebooks_dir.is_dir():
+        report.errors.append("deck exige o diretório notebooks/")
+        return report
+    for notebook_dir in sorted(path for path in notebooks_dir.iterdir() if path.is_dir()):
+        slug = notebook_dir.name
+        index_path = notebook_dir / "index.md"
+        summary_path = notebook_dir / f"{slug}.md"
+        if not index_path.is_file():
+            report.errors.append(f"notebook {slug}: exige index.md")
+        if not summary_path.is_file():
+            report.errors.append(f"notebook {slug}: exige o conceito {slug}.md")
+        else:
+            summary_text, summary_report = read_utf8(summary_path)
+            report.extend(summary_report, f"notebooks/{slug}/{slug}.md: ")
+            if summary_text is not None:
+                metadata, _, frontmatter_error = split_frontmatter(summary_text)
+                if frontmatter_error or metadata is None:
+                    report.errors.append(f"notebook {slug}: conceito principal exige frontmatter YAML")
+                else:
+                    if metadata.get("type") != "NotebookLM Summary":
+                        report.errors.append(f"notebook {slug}: conceito principal exige type NotebookLM Summary")
+                    if not isinstance(metadata.get("notebook_id"), str) or not metadata["notebook_id"].strip():
+                        report.errors.append(f"notebook {slug}: conceito principal exige notebook_id")
+        sources_dir = notebook_dir / "sources"
+        if sources_dir.exists():
+            if not sources_dir.is_dir():
+                report.errors.append(f"notebook {slug}: sources deve ser diretório")
+            elif not (sources_dir / "index.md").is_file():
+                report.errors.append(f"notebook {slug}: sources/ exige index.md")
+            else:
+                source_files = sorted(path for path in sources_dir.glob("*.md") if path.name.lower() not in RESERVED)
+                if not source_files:
+                    report.warnings.append(f"notebook {slug}: sources/ sem conceitos de fonte")
+                for source_path in source_files:
+                    source_text, source_report = read_utf8(source_path)
+                    report.extend(source_report, f"{source_path.relative_to(deck_root)}: ")
+                    if source_text is None:
+                        continue
+                    metadata, _, frontmatter_error = split_frontmatter(source_text)
+                    if frontmatter_error or metadata is None:
+                        report.errors.append(f"{source_path.relative_to(deck_root)}: fonte exige frontmatter YAML")
+                        continue
+                    if metadata.get("type") != "NotebookLM Source":
+                        report.errors.append(f"{source_path.relative_to(deck_root)}: fonte exige type NotebookLM Source")
+                    for key in ("source_id", "source_status"):
+                        if not isinstance(metadata.get(key), str) or not metadata[key].strip():
+                            report.errors.append(f"{source_path.relative_to(deck_root)}: fonte exige {key}")
+    link_paths = [deck_root / "index.md", deck_root / "notebooks" / "index.md"]
+    for notebook_dir in sorted(path for path in notebooks_dir.iterdir() if path.is_dir()):
+        link_paths.extend((notebook_dir / "index.md", notebook_dir / f"{notebook_dir.name}.md"))
+        sources_index = notebook_dir / "sources" / "index.md"
+        if sources_index.is_file():
+            link_paths.append(sources_index)
+    for link_path in link_paths:
+        if link_path.is_file():
+            validate_deck_link_targets(link_path, deck_root, report)
+    return report
+
+
 def print_report(report: Report) -> None:
     for item in report.infos:
         print(f"  OK {item}")
@@ -291,15 +384,20 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("arquivo", nargs="?", type=Path, help="conceito ou arquivo reservado")
     parser.add_argument("--bundle", type=Path, help="valida todos os Markdown de um bundle OKF")
+    parser.add_argument("--deck", type=Path, help="valida a estrutura progressiva de um deck notebooklm-to-notes")
     parser.add_argument("--profile", choices=("okf", "portable"), default="okf")
     parser.add_argument("--pt-br", action="store_true", help="bloqueia palavras pt-BR sem acentos na escrita humana")
     parser.add_argument("--vault-root", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
-    if bool(args.arquivo) == bool(args.bundle):
-        parser.error("informe um arquivo ou --bundle <diretório>")
+    selected = sum(value is not None for value in (args.arquivo, args.bundle, args.deck))
+    if selected != 1:
+        parser.error("informe um arquivo, --bundle <diretório> ou --deck <diretório>")
     if args.bundle:
         print(f"Validando bundle: {args.bundle} (OKF 0.1)")
         report = validate_bundle(args.bundle, args.pt_br)
+    elif args.deck:
+        print(f"Validando deck: {args.deck} (notebooklm-to-notes)")
+        report = validate_deck(args.deck, args.pt_br)
     else:
         print(f"Validando: {args.arquivo} (perfil {args.profile})")
         report = validate_path(args.arquivo, args.vault_root, args.profile, args.pt_br)
