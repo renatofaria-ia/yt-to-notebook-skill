@@ -1,68 +1,31 @@
-# Contrato de fidelidade evidence-first
+# Contrato de fidelidade
 
-Este contrato se aplica a toda nova geração da skill. Ele é uma extensão de proveniência do OKF 0.1: usa conceitos Markdown e frontmatter YAML, sem alterar a estrutura aberta do padrão.
+A fidelidade do `notebooklm-to-notes` é editorial e verificável no próprio vault. A extração preserva a identidade das fontes e os IDs dos artefatos que originaram o briefing e o mapa mental, sem armazenar respostas brutas ou diretórios de evidência.
 
-## Artefatos obrigatórios
-
-Para cada ```<notebook-slug>```, crie:
+## Saída obrigatória
 
 ```text
-evidence/
-  index.md
-  raw-response.json
-  raw-response.md
-  source-inventory.json
-  coverage.md
-sources/
-  index.md
-  <fonte>.md
+<deck>/
+  .obsidian/graph.json
+  neurons/
+  notebooks/<slug>/
+    <slug>.md
+    index.md
+    log.md
 ```
 
-```raw-response.json``` é imutável e contém o payload completo de ```notebooklm ask --json```. ```raw-response.md``` é um conceito ```NotebookLM Raw Response``` com ```query_prompt```, ```raw_response_sha256``` e a resposta literal. ```source-inventory.json``` conserva o inventário original, inclusive IDs, título, URL quando conhecida e status.
+O resumo principal exige frontmatter com `notebook_id`, `briefing_artifact_id`, `mind_map_note_id`, `source_count` e `source_links`.
 
-```coverage.md``` é um conceito ```NotebookLM Coverage Ledger```. Seu frontmatter contém ```extraction_status```, ```coverage_items``` e ```empty_categories```.
+Cada item de `source_links` inclui `title`, `type`, `notebooklm_source_id` e `url` quando a origem fornecer uma URL HTTP(S). O corpo do resumo repete as fontes em `## Fontes originais`.
 
-Cada item em ```coverage_items``` possui:
+## Integridade editorial
 
-```yaml
-- id: C1
-  category: concept
-  extracted_text: "Texto preservado da extração."
-  source_ids: [source-id]
-  destination: /notebooks/<slug>/evidence/coverage.md#C1
-  status: represented
-```
+- O briefing começa com `## 1. Sumário Executivo` e continua com seções H2 numeradas.
+- O Mermaid aparece em uma única seção `## Mapa mental`, entre a seção 1 e a seção 2.
+- O resumo contém descrição semântica de 180 a 320 caracteres e de 4 a 8 tags hierárquicas.
+- Links em `neuron_links` e `related_summaries` apontam para arquivos existentes no mesmo vault.
+- Todos os textos Markdown e JSON usam UTF-8 sem BOM e sem mojibake.
 
-As categorias são ```concept```, ```example```, ```number```, ```limit```, ```divergence``` e ```gap```. Uma categoria vazia exige justificativa em ```empty_categories```. Item ```gap``` exige ```gap_reason```.
+## Publicação
 
-## Solicitação estruturada ao NotebookLM
-
-Use este pedido, substituindo o contexto necessário:
-
-```text
-Com base somente nas fontes deste notebook, responda com JSON válido.
-Extraia itens atômicos, sem omitir detalhes relevantes, nas categorias:
-concept, example, number, limit, divergence e gap.
-Para cada item, forneça id único, category, extracted_text literal ou fiel,
-source_ids conhecidos e uma explicação curta se category for gap.
-Inclua também um resumo em texto e informe explicitamente categorias sem itens.
-Não use Markdown fora do JSON. Não invente fonte, URL, número, limite ou consenso.
-```
-
-Se o JSON não puder ser analisado, faça uma única solicitação corretiva. Preserve ambos os retornos brutos. Após a segunda falha, o bundle é ```incomplete```.
-
-## Síntese e fontes
-
-A síntese ```NotebookLM Summary``` deve ter ```notebook_id```, ```source_ready_count``` e ```source_error_count```. Organize as alegações em:
-
-1. Conceitos
-2. Exemplos
-3. Números e limites
-4. Divergências e lacunas
-5. Citations
-
-Cada alegação tem link para o item no ledger. Cada fonte pronta é ```NotebookLM Source``` com ```source_id``` e ```source_status```. Fontes indisponíveis usam ```NotebookLM Source Gap```, mantendo ID, status e impacto.
-
-## Conclusão e falha
-
-```extraction_status: complete``` exige que todos os itens tenham destino existente, fonte correspondente, âncora no ledger e referência na síntese. Um erro de fonte, divergência não resolvida, item sem destino ou falha do pacote estruturado marca ```incomplete```. O material bruto é preservado, mas a skill não declara entrega integral.
+O extrator monta o conteúdo em staging, executa o validador e só então copia a pasta do notebook para o vault final. O staging inválido nunca é publicado.

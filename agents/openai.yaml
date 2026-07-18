@@ -1,4 +1,4 @@
 interface:
-  display_name: "NotebookLM para decks OKF"
-  short_description: "Extrações integrais, visuais e verificáveis"
-  default_prompt: "Use $notebooklm-to-notes para extrair integralmente um notebook em um deck OKF evidence-first no destino que eu indicar. Preserve a resposta bruta, cubra conceitos, exemplos, números, limites, divergências e lacunas, gere conceitos de todas as fontes prontas e valide com --fidelity --pt-br."
+  display_name: "NotebookLM para vaults Obsidian"
+  short_description: "Briefings em pt-BR com mapa Mermaid e proveniência"
+  default_prompt: "Use $notebooklm-to-notes para extrair um notebook em um vault Obsidian minimalista no destino que eu indicar. Gere briefing em pt-BR, preserve source_links, inclua um mapa mental Mermaid e publique apenas após validar o staging."

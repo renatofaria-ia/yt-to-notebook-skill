@@ -1,33 +1,21 @@
-# Formato visual sobre o nucleo OKF
+# Formato visual
 
-O OKF define a estrutura persistida; está referencia define a camada editorial da `sintese.md` sem alterar a conformidade.
+A síntese deve ser escaneável no Obsidian e fiel às fontes do NotebookLM.
 
-## Ordem recomendada
+## Ordem obrigatória
 
-1. `# Titulo` claro, com emoji se ajudar.
-2. Callout `abstract` para TL;DR.
-3. Callout `info` para proveniência e limites da extração.
-4. Mecanismo ou ideia central, com tabela ou fluxo quando útil.
-5. Desenvolvimento e exemplos fieis as fontes.
-6. `## Como aplicar` com ações praticas.
-7. `## Mapa` com mindmap Mermaid quando fizer sentido.
-8. `## Cola rápida` em tabela.
-9. `# Citations` com links para conceitos de fonte e referências externas.
+1. `# Título` do notebook.
+2. `## 1. Sumário Executivo` com os pontos de maior impacto.
+3. `## Mapa mental` com um Mermaid `mindmap` curto.
+4. `## 2.` e demais seções H2 numeradas do briefing.
+5. `## Neurônios conectáveis`.
+6. `## Resumos relacionados`.
+7. `## Fontes originais`.
 
-## Portabilidade
+## Regras de apresentação
 
-- O conteúdo essencial deve sobreviver sem Mermaid e sem callouts.
-- Use links Markdown padrão; a geração não usa wikilinks.
-- Callouts degradam para blockquotes em leitores genericos.
-- No Notion, use blocos nativos apenas como espelho do bundle local.
-
-## Mermaid seguro
-
-- Nunca use `&quot;`, `&amp;`, `&lt;`, `&gt;` ou entidades HTML.
-- Use `<br/>`, não `\n`, dentro de nos.
-- Em `mindmap`, não use aspas nos rótulos e evite caracteres estruturais.
-- Prefira diagramas pequenos que expliquem uma relação real.
-
-## Voz
-
-Escreva em PT-BR, com paragrafos curtos, termos-chave em negrito e sem floreio. Fidelidade vem antes de compressao: preserve conceitos, limites, exemplos e discordancias das fontes.
+- Escreva em pt-BR, com parágrafos curtos e títulos claros.
+- Preserve acentos nos rótulos Mermaid e não use entidades HTML.
+- Não use wikilinks, caminhos locais ou `file://`; links internos começam com `/`.
+- Evite diagramas genéricos: todo mapa mental deve derivar do artefato nativo baixado do NotebookLM.
+- Mantenha somente uma seção de mapa mental por resumo.

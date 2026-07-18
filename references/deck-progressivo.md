@@ -1,32 +1,27 @@
 # Deck progressivo
 
-O deck é a representação didática do segundo cérebro. A raiz oferece descoberta progressiva; cada notebook é um conceito principal; suas fontes e evidências permanecem próximas ao conteúdo.
+O vault é um segundo cérebro editorial: cada notebook gera uma síntese independente, enquanto `neurons/` recebe conexões reutilizáveis quando existirem.
 
 ## Organização
 
 ```text
 <deck>/
-  index.md
-  log.md
+  neurons/
   notebooks/
-    index.md
     <notebook-slug>/
-      index.md
       <notebook-slug>.md
-      evidence/
-      sources/
+      index.md
+      log.md
 ```
 
-Use ```index.md``` para navegação e ```log.md``` para histórico cronológico ISO. Não mova nem migre bundles históricos sem pedido explícito.
+Não há índice global. `index.md` e `log.md` pertencem somente à pasta de cada notebook para manter descoberta e histórico próximos ao conteúdo.
 
-## Cross-linking didático
+## Conexões
 
-A síntese pode conter até três links em ```Conhecimento relacionado```. Cada link deve explicar a relação e ter suporte explícito no NotebookLM ou compartilhar duas tags normalizadas. Não crie arquivo de arestas, banco de grafo ou hub de tags.
+- `neuron_links` aponta para conceitos canônicos em `neurons/`.
+- `related_summaries` aponta para resumos já publicados em `notebooks/`.
+- Só crie conexões que tenham relação editorial explícita; não crie hubs artificiais, banco de arestas ou links recíprocos automáticos.
 
-## Regra de fidelidade
+## Grafo do Obsidian
 
-Novas extrações incluem evidência bruta, inventário, ledger de cobertura e conceitos de todas as fontes prontas. Consulte [o contrato de fidelidade](contrato-fidelidade.md). Use a validação abaixo antes de declarar a extração completa:
-
-```powershell
-python scripts/validar_nota.py --deck <diretório> --fidelity --pt-br
-```
+O extrator preserva a configuração existente e atualiza `graph.json` com busca que oculta índices e logs, sem esconder o conteúdo principal. O grafo mostra sínteses, tags e neurônios válidos.
